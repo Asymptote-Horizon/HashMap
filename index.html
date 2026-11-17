@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101322">
+<title>Hash Maps — The Art of the Instant Lookup</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+:root{--bg:#101322;--panel:#191e31;--panel2:#20263b;--ink:#f3f0e8;--muted:#a8adc0;--lime:#d6fa69;--pink:#ff9dc8;--blue:#8edcff;--orange:#ffbd72;--line:#343b55;--mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;--display:'Space Grotesk',sans-serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.13;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(to bottom,black,transparent 85%);z-index:-1}
+a{color:inherit}.wrap{width:min(1160px,calc(100% - 40px));margin:auto}.mono{font-family:var(--mono)}.eyebrow{font:500 11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--lime)}
+nav{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.brand{font:700 19px var(--display);letter-spacing:-.05em}.brand span{color:var(--lime)}.navlinks{display:flex;gap:25px;font-size:12px;color:var(--muted)}.navlinks a{text-decoration:none}.navlinks a:hover{color:var(--lime)}
+.nav-right{display:flex;align-items:center;gap:18px}
+.music-toggle{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:9px 12px;background:#1b2134;color:var(--muted);font:11px var(--mono);cursor:pointer;transition:.2s;white-space:nowrap}
+.music-toggle:hover{border-color:var(--lime);color:var(--lime)}
+.music-toggle[aria-pressed="true"]{background:#d6fa6918;border-color:var(--lime);color:var(--lime)}
+.music-icon{font-size:15px;line-height:1}
+
+.hero{padding:92px 0 65px;position:relative}.hero-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:54px;align-items:center}.hero h1{font:700 clamp(52px,7vw,90px)/.95 var(--display);letter-spacing:-.075em;margin:20px 0 22px}.hero h1 em{font-style:normal;color:var(--lime)}.hero p{color:var(--muted);max-width:510px;line-height:1.75;font-size:16px}.hero-actions{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap}.btn{border:1px solid var(--line);border-radius:999px;padding:13px 18px;text-decoration:none;font-size:12px;font-weight:700;display:inline-flex;gap:9px;align-items:center;cursor:pointer;background:transparent;color:var(--ink);transition:.2s}.btn.primary{background:var(--lime);border-color:var(--lime);color:#151a20}.btn:hover{transform:translateY(-3px);box-shadow:0 8px 24px #0004}.hero-note{font:11px var(--mono);color:var(--muted);margin-top:20px}
+.hero-art{min-height:350px;position:relative;display:grid;place-items:center}.orbit{width:300px;height:300px;border:1px solid #505873;border-radius:50%;position:absolute;animation:spin 28s linear infinite}.orbit:before,.orbit:after{content:"";position:absolute;width:9px;height:9px;background:var(--pink);border-radius:50%;top:34px;left:38px;box-shadow:0 0 18px var(--pink)}.orbit:after{background:var(--lime);top:auto;left:auto;right:24px;bottom:62px;box-shadow:0 0 18px var(--lime)}@keyframes spin{to{transform:rotate(360deg)}}.core{width:220px;height:220px;border-radius:34px;background:linear-gradient(145deg,#282f49,#171c2d);border:1px solid #535b79;box-shadow:0 30px 80px #0008,inset 0 1px #ffffff20;display:grid;place-items:center;transform:rotate(-7deg);position:relative}.core-inner{transform:rotate(7deg);text-align:center}.core .big{font:700 55px var(--display);letter-spacing:-.08em;color:var(--lime)}.core small{display:block;font:10px var(--mono);color:var(--muted);letter-spacing:.15em}.float-tag{position:absolute;padding:10px 13px;border:1px solid var(--line);border-radius:9px;background:#20263b;font:11px var(--mono);box-shadow:0 12px 30px #0005}.tag-a{top:42px;right:0;color:var(--pink)}.tag-b{bottom:42px;left:0;color:var(--blue)}.tag-c{top:15px;left:5px;color:var(--lime)}
+.section{padding:76px 0;border-top:1px solid var(--line)}.section-head{display:flex;justify-content:space-between;gap:30px;align-items:end;margin-bottom:30px}.section h2{font:600 clamp(30px,4vw,47px)/1 var(--display);letter-spacing:-.06em;margin:10px 0 0}.section-intro{max-width:410px;color:var(--muted);font-size:13px;line-height:1.7}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:24px;position:relative;overflow:hidden}.card-label{font:10px var(--mono);color:var(--muted);letter-spacing:.12em;text-transform:uppercase}.card h3{font:600 21px var(--display);margin:10px 0}.card p{font-size:13px;line-height:1.7;color:var(--muted);margin:0}.kv-table{margin-top:18px;border:1px solid var(--line);border-radius:10px;overflow:hidden}.kv-row{display:grid;grid-template-columns:1fr 1.3fr;padding:10px 13px;font:12px var(--mono);border-bottom:1px solid var(--line)}.kv-row:last-child{border:0}.kv-row.head{background:#282e46;color:var(--lime)}
+.flow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:25px}.flowbox{flex:1;text-align:center;border:1px solid var(--line);border-radius:12px;padding:15px 8px;background:#20263b}.flowbox b{display:block;font:600 14px var(--display)}.flowbox small{font:10px var(--mono);color:var(--muted)}.arrow{color:var(--lime);font-size:20px}
+.demo{background:linear-gradient(135deg,#1b2236,#171b2c);border:1px solid #414966;border-radius:22px;padding:25px}.demo-top{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}.demo-top h3{font:600 22px var(--display);margin:0}.demo-controls{display:flex;gap:8px;flex-wrap:wrap}.field{background:#111626;border:1px solid #414966;border-radius:9px;padding:10px 12px;color:var(--ink);font:12px var(--mono);width:125px;outline:none}.field:focus{border-color:var(--lime)}.demo-controls button,.mode button{background:#2a3149;color:var(--ink);border:1px solid #48516f;border-radius:9px;padding:10px 13px;font:11px var(--mono);cursor:pointer}.demo-controls button:hover,.mode button.active{background:var(--lime);color:#171b25;border-color:var(--lime)}.mode{display:flex;gap:7px;margin:20px 0}.demo-body{display:grid;grid-template-columns:1fr 1fr;gap:20px}.demo-panel{background:#111626;border:1px solid #303852;border-radius:13px;padding:17px;min-height:255px}.demo-panel h4{font:11px var(--mono);color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin:0 0 15px}.bucket-list{display:grid;gap:7px}.bucket{display:grid;grid-template-columns:35px 1fr;gap:9px;align-items:center}.bucket-id{font:11px var(--mono);color:var(--muted);text-align:center}.bucket-track{min-height:35px;border:1px dashed #46506d;border-radius:8px;display:flex;align-items:center;gap:6px;padding:4px 7px;flex-wrap:wrap;transition:.25s}.bucket-track.hit{border:1px solid var(--lime);background:#d6fa6912;box-shadow:0 0 20px #d6fa6910}.chip{font:11px var(--mono);padding:6px 9px;border-radius:6px;background:#303955;border:1px solid #65708f;color:var(--blue);animation:pop .25s ease-out}.chip.new{background:#d6fa69;color:#141922;border-color:var(--lime)}@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}.log{font:11px/1.8 var(--mono);color:var(--muted);white-space:pre-wrap}.log strong{color:var(--lime);font-weight:500}.formula{font:13px var(--mono);color:var(--lime);margin:10px 0}.hint{font-size:11px;color:var(--muted);margin-top:14px;line-height:1.6}
+.concepts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.concept{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}.concept .num{font:12px var(--mono);color:var(--pink)}.concept h3{font:600 17px var(--display);margin:14px 0 8px}.concept p{font-size:12px;color:var(--muted);line-height:1.7;margin:0}
+.collision-visual{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:20px}.method{background:#111626;border:1px solid var(--line);border-radius:13px;padding:18px}.method h4{font:600 15px var(--display);margin:0 0 6px}.method p{font-size:11px;color:var(--muted);line-height:1.6}.chain{display:flex;align-items:center;gap:5px;margin:15px 0 5px;flex-wrap:wrap}.chain span{padding:8px 10px;border-radius:7px;background:#303955;border:1px solid #5b6686;font:11px var(--mono)}.chain i{font-style:normal;color:var(--lime)}.slots{display:flex;gap:4px;margin:15px 0}.slot{flex:1;min-width:0;text-align:center;padding:10px 2px;border-radius:6px;background:#252c43;border:1px solid #414966;font:10px var(--mono);color:var(--muted)}.slot.filled{color:var(--lime);border-color:#829b4c}
+.complexity{width:100%;border-collapse:collapse;margin-top:15px;font:12px var(--mono)}.complexity th,.complexity td{padding:13px 10px;text-align:left;border-bottom:1px solid var(--line)}.complexity th{color:var(--muted);font-weight:400}.complexity td:last-child{color:var(--lime)}.complexity tr:last-child td{border:0}
+.apps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.app{border:1px solid var(--line);background:var(--panel);border-radius:15px;padding:18px;min-height:145px}.app .glyph{font-size:25px}.app h3{font:600 15px var(--display);margin:15px 0 6px}.app p{font-size:11px;line-height:1.6;color:var(--muted);margin:0}
+.quiz{background:var(--lime);color:#171b25;border-radius:20px;padding:28px;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center}.quiz h2{font:700 29px var(--display);letter-spacing:-.05em;margin:7px 0}.quiz p{font-size:12px;max-width:520px;line-height:1.6}.quiz button{background:#171b25;color:var(--lime);border:0;border-radius:999px;padding:14px 18px;font:600 12px var(--sans);cursor:pointer}.quiz button:hover{transform:translateY(-2px)}.quiz-result{font:12px var(--mono);margin-top:12px;min-height:18px}
+.resources{display:grid;grid-template-columns:1fr 1fr;gap:14px}.resource{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:17px 19px;border:1px solid var(--line);background:var(--panel);border-radius:13px;text-decoration:none;transition:.2s}.resource:hover{border-color:var(--lime);transform:translateY(-2px)}.resource b{font:600 14px var(--display)}.resource small{display:block;color:var(--muted);font-size:11px;margin-top:5px}.resource span{color:var(--lime);font-size:18px}
+footer{border-top:1px solid var(--line);padding:30px 0 45px;color:var(--muted);font:10px var(--mono)}
+.footer-top{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.creator-credit{margin-top:38px;padding:27px 0 4px;border-top:1px solid var(--line);text-align:center}
+.credit-line{font:12px var(--mono);color:var(--muted);letter-spacing:.04em}
+.credit-line span{color:var(--lime)}
+.credit-name{font:600 clamp(21px,3vw,29px) var(--display);letter-spacing:-.045em;color:var(--ink);margin:10px 0 13px}
+.credit-details{display:flex;justify-content:center;gap:9px 22px;flex-wrap:wrap;color:var(--muted);font:10px var(--mono)}
+@media(max-width:520px){.footer-top{display:block;line-height:2}.credit-details{flex-direction:column;gap:8px}}
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}.reveal.visible{opacity:1;transform:none}.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);background:var(--lime);color:#171b25;padding:11px 16px;border-radius:999px;font:11px var(--mono);opacity:0;transition:.25s;pointer-events:none;z-index:5}.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:800px){.hero-grid,.two,.demo-body{grid-template-columns:1fr}.hero{padding-top:60px}.hero-art{min-height:300px}.section-head{display:block}.section-intro{margin-top:15px}.concepts{grid-template-columns:1fr 1fr}.apps{grid-template-columns:1fr 1fr}.navlinks{gap:12px}.navlinks a:nth-child(n+3){display:none}.nav-right{gap:8px}.music-toggle{padding:8px 10px}.music-label{display:none}}
+@media(max-width:520px){.wrap{width:min(100% - 28px,1160px)}nav{height:62px}.brand{font-size:16px}.hero h1{font-size:55px}.hero-art{transform:scale(.85);margin:-15px 0}.section{padding:55px 0}.concepts,.collision-visual,.resources{grid-template-columns:1fr}.apps{grid-template-columns:1fr 1fr}.quiz{grid-template-columns:1fr}.demo{padding:15px}.demo-controls{width:100%}.field{flex:1;min-width:0}.flow{gap:5px}.flowbox{padding:11px 4px}.flowbox b{font-size:11px}.arrow{font-size:14px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav><div class="brand">FIELDNOTES<span>/</span>CS</div><div class="nav-right"><div class="navlinks"><a href="#intuition">The idea</a><a href="#lab">Try it</a><a href="#collisions">Collisions</a><a href="#resources">Keep learning</a></div><button class="music-toggle" id="musicToggle" type="button" aria-pressed="false" aria-label="Turn background music on"><span class="music-icon">♫</span><span class="music-label">Music off</span></button></div></nav>
+<header class="hero">
+ <div class="hero-grid">
+  <div><div class="eyebrow">A tiny field guide to data structures&nbsp; / &nbsp;01</div><h1>Hash maps.<br><em>Big lookup</em><br>energy.</h1><p>Imagine a library where you don't search every shelf. You calculate exactly which shelf should hold the book. That's the beautiful trick behind a hash map.</p><div class="hero-actions"><a class="btn primary" href="#lab">Open the interactive lab <span>↘</span></a><a class="btn" href="#intuition">Start with the idea</a></div><div class="hero-note">KEY → HASH FUNCTION → INDEX → VALUE</div></div>
+  <div class="hero-art"><div class="orbit"></div><div class="core"><div class="core-inner"><div class="big">h(k)</div><small>LOOK IT UP</small></div></div><div class="float-tag tag-a">O(1) average</div><div class="float-tag tag-b">key : value</div><div class="float-tag tag-c">01 / 07 buckets</div></div>
+ </div>
+</header>
+<section class="section reveal" id="intuition">
+ <div class="section-head"><div><div class="eyebrow">01 — The mental model</div><h2>Store by a name.<br>Find by a calculation.</h2></div><p class="section-intro">A hash map stores pairs: a key that identifies something, and the value attached to it. The key is passed through a hash function to choose a bucket.</p></div>
+ <div class="two">
+  <article class="card"><div class="card-label">Think of a contact list</div><h3>The key is the handle.</h3><p>Instead of remembering where Rahul's number sits in a long list, ask for the entry by its key. The map takes care of locating the value.</p><div class="kv-table"><div class="kv-row head"><span>KEY</span><span>VALUE</span></div><div class="kv-row"><span>101</span><span>Rahul</span></div><div class="kv-row"><span>102</span><span>Sneha</span></div><div class="kv-row"><span>103</span><span>Aditya</span></div></div></article>
+  <article class="card"><div class="card-label">The lookup pipeline</div><h3>Three steps. No long scan.</h3><p>For this toy example, our hash function is remainder: key mod bucket count. Real implementations use more sophisticated hash functions.</p><div class="flow"><div class="flowbox"><b>Key</b><small>17</small></div><div class="arrow">→</div><div class="flowbox"><b>Hash</b><small>17 mod 7</small></div><div class="arrow">→</div><div class="flowbox"><b>Index</b><small>3</small></div></div><div class="formula">h(17) = 17 % 7 = 3</div></article>
+ </div>
+</section>
+<section class="section reveal" id="lab">
+ <div class="section-head"><div><div class="eyebrow">02 — Hands-on / live model</div><h2>Make the map<br>do the work.</h2></div><p class="section-intro">Add a key, look it up, or remove it. Watch the key travel through the hash function and land in a bucket. Try 10, 17 and 24 to create a collision.</p></div>
+ <div class="demo">
+  <div class="demo-top"><h3>Bucket playground <span style="color:var(--lime)">↗</span></h3><div class="demo-controls"><input id="keyInput" class="field" type="number" placeholder="Enter a key" value="17"><button id="insertBtn">＋ Insert</button><button id="searchBtn">⌕ Search</button><button id="deleteBtn">− Delete</button><button id="resetBtn">Reset</button></div></div>
+  <div class="mode"><button class="active" data-mode="chain">Separate chaining</button><button data-mode="open">Open addressing</button></div>
+  <div class="demo-body"><div class="demo-panel"><h4>Hash table / 7 buckets</h4><div id="buckets" class="bucket-list"></div><div class="hint">Hash function: <span class="mono" style="color:var(--lime)">index = key % 7</span>. Each row is a bucket. Highlight shows where the latest operation landed.</div></div><div class="demo-panel"><h4>What just happened</h4><div id="formula" class="formula">h(17) = 17 % 7 = 3</div><div id="log" class="log">Ready. Insert a key to begin.</div><div class="hint" id="modeHint">Separate chaining keeps colliding keys together in a small linked list.</div></div></div>
+ </div>
+</section>
+<section class="section reveal" id="collisions">
+ <div class="section-head"><div><div class="eyebrow">03 — When keys overlap</div><h2>Same bucket.<br>Different strategies.</h2></div><p class="section-intro">A collision happens when two different keys produce the same index. It is normal, expected, and handled deliberately.</p></div>
+ <div class="collision-visual">
+  <article class="method"><h4>01 / Separate chaining</h4><p>Each bucket points to a collection of entries. New keys with the same index join that collection.</p><div class="chain"><span>bucket 3</span><i>→</i><span>10</span><i>→</i><span>17</span><i>→</i><span>24</span></div><p>Easy to understand; extra memory is used for links or collection nodes.</p></article>
+  <article class="method"><h4>02 / Open addressing</h4><p>Keep entries inside the table itself. If a slot is occupied, probe for another available slot.</p><div class="slots"><div class="slot">0<br>—</div><div class="slot">1<br>—</div><div class="slot">2<br>—</div><div class="slot filled">3<br>10</div><div class="slot filled">4<br>17</div><div class="slot filled">5<br>24</div><div class="slot">6<br>—</div></div><p>Linear probing checks the next slot, wrapping around at the end.</p></article>
+ </div>
+ <div class="concepts" style="margin-top:15px">
+  <article class="concept"><div class="num">NOTE / A</div><h3>Good hash function</h3><p>Fast and deterministic, with keys spread evenly across buckets. Better distribution means fewer collisions.</p></article>
+  <article class="concept"><div class="num">NOTE / B</div><h3>Load factor</h3><p>How full the table is: entries divided by buckets. As it grows, implementations may resize and rehash.</p></article>
+  <article class="concept"><div class="num">NOTE / C</div><h3>Not guaranteed O(1)</h3><p>Average lookup is constant time with good hashing and controlled load. Heavy collisions can make operations much slower.</p></article>
+ </div>
+</section>
+<section class="section reveal" id="performance">
+ <div class="section-head"><div><div class="eyebrow">04 — Performance snapshot</div><h2>Fast on average.<br>Not magic.</h2></div><p class="section-intro">The familiar O(1) headline describes average-case behavior, not a promise for every input or every implementation.</p></div>
+ <div class="two"><article class="card"><div class="card-label">Time complexity</div><table class="complexity"><thead><tr><th>OPERATION</th><th>AVERAGE</th><th>WORST</th></tr></thead><tbody><tr><td>Insert</td><td>O(1)</td><td>O(n)</td></tr><tr><td>Search</td><td>O(1)</td><td>O(n)</td></tr><tr><td>Delete</td><td>O(1)</td><td>O(n)</td></tr></tbody></table></article><article class="card"><div class="card-label">Space complexity</div><h3 style="font-size:42px;color:var(--lime);margin-top:22px">O(n)</h3><p>Space grows with the number of stored entries. The table also maintains bucket capacity, and some implementations allocate extra room to keep lookups fast.</p><div class="hint">n = number of key–value pairs</div></article></div>
+</section>
+<section class="section reveal" id="applications">
+ <div class="section-head"><div><div class="eyebrow">05 — Out in the world</div><h2>Quietly everywhere.</h2></div><p class="section-intro">Hash maps are a practical building block in software. These are a few familiar places where key-based fast access is useful.</p></div>
+ <div class="apps"><article class="app"><div class="glyph">🌐</div><h3>Caching</h3><p>Reuse a result by looking it up with a request or resource key.</p></article><article class="app"><div class="glyph">▤</div><h3>Database indexing</h3><p>Hash-based indexes can help locate records for equality lookups.</p></article><article class="app"><div class="glyph">▥</div><h3>Frequency counts</h3><p>Count words or events by storing each item as a key.</p></article><article class="app"><div class="glyph">⌘</div><h3>Symbol tables</h3><p>Compilers use name-to-information mappings for identifiers.</p></article></div>
+</section>
+<section class="section reveal">
+ <div class="quiz"><div><div class="eyebrow" style="color:#4c5b20">Quick check / 01 question</div><h2>One last lookup.</h2><p>There are 7 buckets and the hash function is h(k) = k mod 7. Where does key 24 go?</p><div class="quiz-result" id="quizResult">Choose an answer to check your intuition.</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="answer" data-answer="2">Bucket 2</button><button class="answer" data-answer="3">Bucket 3</button><button class="answer" data-answer="4">Bucket 4</button></div></div>
+</section>
+<section class="section reveal" id="resources">
+ <div class="section-head"><div><div class="eyebrow">06 — Go a little deeper</div><h2>Good rabbit holes.</h2></div><p class="section-intro">A few useful starting points for continuing after the presentation. Links open the relevant learning resource in a new tab.</p></div>
+ <div class="resources">
+  <a class="resource" href="https://www.youtube.com/results?search_query=hash+maps+explained+data+structures" target="_blank" rel="noopener"><div><b>Hash maps, visually explained</b><small>YouTube search · fundamentals and intuition</small></div><span>↗</span></a>
+  <a class="resource" href="https://www.youtube.com/results?search_query=hash+table+collision+resolution+chaining+open+addressing" target="_blank" rel="noopener"><div><b>Collision resolution in action</b><small>YouTube search · chaining vs open addressing</small></div><span>↗</span></a>
+  <a class="resource" href="https://visualgo.net/en/hashtable" target="_blank" rel="noopener"><div><b>VisuAlgo — Hash Table</b><small>Interactive visualisation · explore operations</small></div><span>↗</span></a>
+  <a class="resource" href="https://en.wikipedia.org/wiki/Hash_table" target="_blank" rel="noopener"><div><b>Hash table reference</b><small>Concepts, variants and implementation details</small></div><span>↗</span></a>
+ </div>
+</section>
+<footer class="site-footer">
+ <div class="footer-top"><span>FIELDNOTES / CS — A small companion to the hash map poster.</span><span>BUILT FOR CURIOUS MINDS&nbsp; ✳ &nbsp;2026</span></div>
+ <div class="creator-credit">
+  <div class="credit-line">Built with <span>logic, curiosity &amp; caffeine</span> by</div>
+  <div class="credit-name">Omkar Mahesh Deshmukh</div>
+  <div class="credit-details">
+   <span>PRN : 202501080094</span>
+   <span>Roll No. 185</span>
+   <span>SY BTech IT, MITAOE</span>
+  </div>
+ </div>
+</footer>
+</div>
+<div class="toast" id="toast">Copied</div>
+<audio id="backgroundMusic" src="music.mp3" loop preload="none"></audio>
+<script>
+(() => {
+ const SIZE=7, table=Array.from({length:SIZE},()=>[]), input=document.getElementById('keyInput');
+ let mode='chain', last=-1, lastKey=null;
+ const $=id=>document.getElementById(id);
+ const hash=k=>((k%SIZE)+SIZE)%SIZE;
+ const say=(html)=>{$('log').innerHTML=html};
+ const render=()=>{
+  const root=$('buckets');root.innerHTML='';
+  table.forEach((items,i)=>{
+   const row=document.createElement('div');row.className='bucket';
+   const id=document.createElement('div');id.className='bucket-id';id.textContent=String(i);
+   const track=document.createElement('div');track.className='bucket-track'+(last===i?' hit':'');
+   if(items.length){items.forEach(k=>{const chip=document.createElement('span');chip.className='chip'+(k===lastKey?' new':'');chip.textContent=k;track.appendChild(chip)})}
+   else {const empty=document.createElement('span');empty.style.cssText='font:10px var(--mono);color:#65708a';empty.textContent='empty';track.appendChild(empty)}
+   row.append(id,track);root.appendChild(row);
+  });
+ };
+ const formula=k=>{const idx=hash(k);$('formula').textContent=`h(${k}) = ${k} % ${SIZE} = ${idx}`;last=idx;lastKey=k;return idx};
+ const insert=()=>{
+  const k=Number(input.value);if(!Number.isSafeInteger(k)){say('Enter a whole-number key first.');return}
+  const idx=formula(k);
+  if(mode==='chain'){
+   if(table[idx].includes(k)){say(`Key <strong>${k}</strong> is already stored in bucket ${idx}. No duplicate added.`)}
+   else {const collision=table[idx].length>0;table[idx].push(k);say(collision?`Collision! <strong>${k}</strong> also hashes to bucket ${idx}. Chaining adds it to that bucket's list.`:`Hash <strong>${k}</strong> to bucket ${idx}. The bucket is empty, so the key is stored there.`)}
+  }else{
+   if(table.flat().includes(k)){say(`Key <strong>${k}</strong> is already in the table.`)}
+   else {let pos=idx,steps=0;while(table[pos].length&&steps<SIZE){pos=(pos+1)%SIZE;steps++}
+    if(steps===SIZE){say('The table is full. Reset or remove a key before inserting.')}
+    else {table[pos]=[k];last=pos;say(steps?`Collision at bucket ${idx}. Linear probing checks the next slot and stores <strong>${k}</strong> at bucket ${pos}.`:`Bucket ${idx} is free. <strong>${k}</strong> is stored there.`)}
+   }
+  }
+  render();
+ };
+ const search=()=>{
+  const k=Number(input.value);if(!Number.isSafeInteger(k)){say('Enter a whole-number key first.');return}
+  const idx=formula(k);
+  if(mode==='chain'){const found=table[idx].includes(k);say(found?`Found <strong>${k}</strong> in bucket ${idx}. The bucket's chain is checked for the exact key.`:`<strong>${k}</strong> is not in bucket ${idx}. The key was not found.`)}
+  else {let pos=idx,steps=0,found=false;while(steps<SIZE&&table[pos].length){if(table[pos][0]===k){found=true;break}pos=(pos+1)%SIZE;steps++}last=pos;say(found?`Found <strong>${k}</strong> at slot ${pos} after ${steps} probe(s).`:`<strong>${k}</strong> was not found after probing.`)}
+  render();
+ };
+ const del=()=>{
+  const k=Number(input.value);if(!Number.isSafeInteger(k)){say('Enter a whole-number key first.');return}
+  const idx=formula(k);let pos=idx;
+  if(mode==='chain'){const at=table[idx].indexOf(k);if(at>=0){table[idx].splice(at,1);say(`Deleted <strong>${k}</strong> from bucket ${idx}.`)}else say(`Key <strong>${k}</strong> is not present.`)}
+  else {let steps=0,found=false;while(steps<SIZE&&table[pos].length){if(table[pos][0]===k){found=true;break}pos=(pos+1)%SIZE;steps++}
+   if(found){table[pos]=[];say(`Removed <strong>${k}</strong> from slot ${pos}. Note: production open-addressed tables use tombstones or cluster repair so later keys remain searchable.`);last=pos}else say(`Key <strong>${k}</strong> is not present.`)
+  }render();
+ };
+ const reset=()=>{table.forEach(x=>x.splice(0));last=-1;lastKey=null;$('formula').textContent='h(k) = k % 7';say('Table cleared. Add a key to begin again.');render()};
+ $('insertBtn').addEventListener('click',insert);$('searchBtn').addEventListener('click',search);$('deleteBtn').addEventListener('click',del);$('resetBtn').addEventListener('click',reset);
+ input.addEventListener('keydown',e=>{if(e.key==='Enter')insert()});
+ document.querySelectorAll('[data-mode]').forEach(btn=>btn.addEventListener('click',()=>{
+  mode=btn.dataset.mode;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b===btn));reset();
+  $('modeHint').textContent=mode==='chain'?'Separate chaining keeps colliding keys together in a small linked list.':'Linear probing scans forward to the next empty slot. This simplified demo clears the table when you switch modes.';
+ }));
+ render();
+ document.querySelectorAll('.answer').forEach(btn=>btn.addEventListener('click',()=>{
+  const r=$('quizResult');if(btn.dataset.answer==='3'){r.textContent='Correct. 24 % 7 = 3 — it lands in bucket 3.';r.style.fontWeight='700'}else{r.textContent='Not quite. Divide 24 by 7: the remainder is 3, so it lands in bucket 3.';r.style.fontWeight='500'}
+ }));
+
+ // Minimal, synthesized interface sounds. No external sound files are required.
+ let soundContext=null;
+ function playUiSound(kind='tap'){
+  try{
+   const AudioCtx=window.AudioContext||window.webkitAudioContext;
+   if(!AudioCtx)return;
+   if(!soundContext)soundContext=new AudioCtx();
+   if(soundContext.state==='suspended')soundContext.resume();
+   const now=soundContext.currentTime;
+   const osc=soundContext.createOscillator();
+   const gain=soundContext.createGain();
+   const filter=soundContext.createBiquadFilter();
+   osc.type='sine';
+   const tones=kind==='success'?[740,990]:kind==='delete'?[420,300]:[560,720];
+   osc.frequency.setValueAtTime(tones[0],now);
+   osc.frequency.exponentialRampToValueAtTime(tones[1],now+0.075);
+   filter.type='lowpass';filter.frequency.value=1800;
+   gain.gain.setValueAtTime(0.0001,now);
+   gain.gain.exponentialRampToValueAtTime(kind==='tap'?0.018:0.024,now+0.009);
+   gain.gain.exponentialRampToValueAtTime(0.0001,now+0.105);
+   osc.connect(filter);filter.connect(gain);gain.connect(soundContext.destination);
+   osc.start(now);osc.stop(now+0.115);
+  }catch(_e){/* Audio is an enhancement; never interrupt the interface. */}
+ }
+ // Sound effects are intentionally always enabled; the background score is opt-in.
+ document.addEventListener('click',e=>{
+  const target=e.target.closest('button,.btn,.resource');
+  if(!target)return;
+  if(target.id==='musicToggle')return;
+  const kind=target.id==='deleteBtn'?'delete':
+   (target.id==='insertBtn'||target.id==='searchBtn'||target.classList.contains('answer')?'success':'tap');
+  playUiSound(kind);
+ },true);
+
+ const music=document.getElementById('backgroundMusic');
+ const musicToggle=document.getElementById('musicToggle');
+ const musicLabel=musicToggle.querySelector('.music-label');
+ musicToggle.addEventListener('click',async()=>{
+  if(music.paused){
+   try{
+    await music.play();
+    musicToggle.setAttribute('aria-pressed','true');
+    musicToggle.setAttribute('aria-label','Turn background music off');
+    musicLabel.textContent='Music on';
+   }catch(_e){
+    // Missing music.mp3 or blocked playback: keep the site working and the toggle off.
+    music.pause();musicToggle.setAttribute('aria-pressed','false');
+    musicToggle.setAttribute('aria-label','Background music unavailable');
+    musicLabel.textContent='Music unavailable';
+   }
+  }else{
+   music.pause();musicToggle.setAttribute('aria-pressed','false');
+   musicToggle.setAttribute('aria-label','Turn background music on');
+   musicLabel.textContent='Music off';
+  }
+ });
+ music.addEventListener('error',()=>{
+  musicToggle.setAttribute('aria-pressed','false');
+  musicToggle.setAttribute('aria-label','Background music unavailable');
+  musicLabel.textContent='Music unavailable';
+ });
+
+ const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target)}}),{threshold:.12});
+ document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+})();
+</script>
+</body>
+</html>
